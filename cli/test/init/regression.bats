@@ -162,16 +162,6 @@ assert_customization_volumes() {
 		)
 	" "$compose_file"
 
-	# Bind: .vscode (read-only)
-	PROJECT_DIR="$PROJECT_DIR" yq -e "
-		.services.agent.volumes[] |
-		select(
-			.type == \"bind\" and
-			.source == (env(PROJECT_DIR) + \"/.vscode\") and
-			.target == \"/workspace/.vscode\" and
-			.read_only == true
-		)
-	" "$compose_file"
 }
 
 assert_devcontainer_volume() {
@@ -215,7 +205,6 @@ claude_agent_compose_file_has_expected_content() {
 	export SANDCAT_ENABLE_DOTFILES="true"
 	export SANDCAT_MOUNT_GIT_READONLY="true"
 	export SANDCAT_MOUNT_IDEA_READONLY="true"
-	export SANDCAT_MOUNT_VSCODE_READONLY="true"
 
 	run devcontainer \
 		--settings-file "$SETTINGS_FILE" \

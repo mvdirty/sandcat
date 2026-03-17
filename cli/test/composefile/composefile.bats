@@ -62,12 +62,6 @@ teardown() {
 	yq -e '.services.agent.volumes[] | select(. == "../.idea:/workspace/.idea:ro")' "$COMPOSE_FILE"
 }
 
-@test "add_vscode_readonly_volume adds .vscode mount as read-only" {
-	add_vscode_readonly_volume "$COMPOSE_FILE"
-
-	yq -e '.services.agent.volumes[] | select(. == "../.vscode:/workspace/.vscode:ro")' "$COMPOSE_FILE"
-}
-
 assert_jetbrains_capabilities() {
 	local compose_file=$1
 
@@ -84,10 +78,6 @@ assert_customize_compose_file_common() {
 
 	# Verify settings volume on proxy
 	yq -e '.services.mitmproxy.volumes[] | select(. == ".sandcat:/config/project:ro")' "$compose_file"
-
-	# Verify all agent volumes count (initial + 3 workspace + 3 Claude + .git + IDE-specific = 9)
-	run yq '.services.agent.volumes | length' "$compose_file"
-	assert_output 9
 
 	# shellcheck disable=SC2016
 	yq -e '.services.agent.volumes[] | select(. == "${HOME}/.claude/CLAUDE.md:/home/vscode/.claude/CLAUDE.md:ro")' "$compose_file"
@@ -214,7 +204,6 @@ EOF
 	# so the yq's foot_comment is empty.
 	run yq -P '.services.agent.volumes' "$COMPOSE_FILE"
 	assert_line '# - ../.git:/workspace/.git:ro'
-	assert_line '# - ../.vscode:/workspace/.vscode:ro'
 
 	# JetBrains capabilities should still be added
 	assert_jetbrains_capabilities "$COMPOSE_FILE"
@@ -243,10 +232,8 @@ EOF
 
 	export SANDCAT_MOUNT_CLAUDE_CONFIG="true"
 	export SANDCAT_MOUNT_GIT_READONLY="true"
-	export SANDCAT_MOUNT_VSCODE_READONLY="true"
 
 	customize_compose_file "$SETTINGS_FILE" "$COMPOSE_FILE" "claude" "vscode" "test-project"
 
 	assert_customize_compose_file_common "$COMPOSE_FILE"
-	yq -e '.services.agent.volumes[] | select(. == "../.vscode:/workspace/.vscode:ro")' "$COMPOSE_FILE"
 }

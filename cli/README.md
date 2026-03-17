@@ -118,4 +118,3 @@ These override defaults during compose file generation. Optional volumes default
 - `SANDCAT_MOUNT_CLAUDE_CONFIG` - `true` to mount host `~/.claude` config (Claude agent only)
 - `SANDCAT_MOUNT_GIT_READONLY` - `true` to mount `.git/` directory as read-only
 - `SANDCAT_MOUNT_IDEA_READONLY` - `true` to mount `.idea/` directory as read-only (JetBrains)
-- `SANDCAT_MOUNT_VSCODE_READONLY` - `true` to mount `.vscode/` directory as read-only (VS Code)

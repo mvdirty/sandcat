@@ -13,7 +13,6 @@ source "$SCT_LIBDIR/constants.bash"
 #   - SANDCAT_MOUNT_CLAUDE_CONFIG: "true" to mount host Claude config (~/.claude)
 #   - SANDCAT_MOUNT_GIT_READONLY: "true" to mount .git directory as read-only
 #   - SANDCAT_MOUNT_IDEA_READONLY: "true" to mount .idea directory as read-only
-#   - SANDCAT_MOUNT_VSCODE_READONLY: "true" to mount .vscode directory as read-only
 # Args:
 #   $1 - Path to the settings file to mount, relative to the Docker Compose file directory
 #   $2 - Path to the Docker Compose file to modify
@@ -40,11 +39,6 @@ customize_compose_file() {
 		: "${SANDCAT_MOUNT_IDEA_READONLY:=true}"
 	fi
 
-	if [[ $ide == "vscode" ]]
-	then
-		: "${SANDCAT_MOUNT_VSCODE_READONLY:=true}"
-	fi
-
 	set_workspace "$compose_file" "$project_name"
 
 	add_settings_volume "$compose_file" "$settings_file"
@@ -56,7 +50,6 @@ customize_compose_file() {
 
 	add_git_readonly_volume "$compose_file" "${SANDCAT_MOUNT_GIT_READONLY:=false}"
 	add_idea_readonly_volume "$compose_file" "${SANDCAT_MOUNT_IDEA_READONLY:-false}"
-	add_vscode_readonly_volume "$compose_file" "${SANDCAT_MOUNT_VSCODE_READONLY:-false}"
 
 	if [[ $ide == "jetbrains" ]]
 	then
@@ -209,17 +202,6 @@ add_idea_readonly_volume() {
 	local active=${2:-true}
 
 	add_volume_entry "$compose_file" '../.idea:/workspace/.idea:ro' "$active" 'Read-only IntelliJ IDEA project directory'
-}
-
-# Adds .vscode directory mount as read-only to the agent service.
-# Args:
-#   $1 - Path to the Docker Compose file
-#   $2 - true to add as active, false to add as comment
-add_vscode_readonly_volume() {
-	local compose_file=$1
-	local active=${2:-true}
-
-	add_volume_entry "$compose_file" '../.vscode:/workspace/.vscode:ro' "$active" 'Read-only VS Code project directory'
 }
 
 # Sets the working directory and adds workspace volume mounts for the agent service.

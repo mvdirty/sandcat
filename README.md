@@ -103,7 +103,7 @@ install the corresponding VS Code extension (e.g. `rust-analyzer` for Rust,
 `metals` for Scala).
 
 Optional volume mounts (Claude config, shell customizations, dotfiles, .git,
-.idea, .vscode) are included as commented-out entries in the generated compose
+.idea) are included as commented-out entries in the generated compose
 file. Uncomment them as needed, or set `SANDCAT_*` environment variables for
 scripted usage. See the [CLI README](cli/README.md) for the full list of flags
 and environment variables.
