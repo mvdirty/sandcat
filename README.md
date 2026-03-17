@@ -14,8 +14,10 @@ so the container never sees real values.
 
 This repository contains:
 
+* a bash CLI to initialize the sandbox for a project, copying and customizing
+  the necessary files
 * reusable proxy definitions: `Dockerfile.wg-client`, `compose-proxy.yml`, and
-  `scripts`
+  `scripts` that perform the network filtering & secret substitution
 * template application and dev container configuration: `Dockerfile.app`,
   `compose-all.yml`, `devcontainer.json`. This should be fine-tuned for each
   project and specific development stack, to install required tools and
@@ -32,6 +34,17 @@ The [CLI](cli/README.md) is a helper script and thin wrapper around
 docker-compose that simplifies the process of initializing and starting the
 sandbox.
 
+It has two main tasks:
+* copy the necessary configuration files from the `cli/templates` directory into
+  your project and customize them based on your choices (development stack,
+  etc.)
+* run `docker compose` commands with the correct compose file automatically
+  detected, so you don't have to remember the file names or paths.
+
+The CLI can itself be run through a docker image that we publish to our
+repository, so that no local installation is required; or installed locally by
+cloning this git repository.
+
 #### Run as docker image (recommended)
 
 ```bash
@@ -39,16 +52,17 @@ sandbox.
 docker pull ghcr.io/virtuslab/sandcat
 
 # Add to your .bashrc or .zshrc
-alias sandcat='docker run --rm -it -v "/var/run/docker.sock:/var/run/docker.sock" -v"$PWD:$PWD" -w"$PWD" -e TERM -e HOME --network none ghcr.io/virtuslab/sandcat'
+alias sandcat='docker run --rm -it -v "/var/run/docker.sock:/var/run/docker.sock" -v"$PWD:$PWD" -w"$PWD" -e TERM -e HOME ghcr.io/virtuslab/sandcat'
 ```
 
-Using the Docker image disables the editor integration (`vi` installed in the
-image will be used instead of your host editor).
+The CLI needs access to your current directory (to copy the configuration
+files), the host Docker socket (to start containers when running `sandcat run`),
+and a couple of environment variables (`TERM` for terminal handling, `HOME` so
+Docker Compose can resolve `~` in volume mounts).
 
-The host environment variables will not be available inside the container unless
-you forward them explicitly. This is important because Docker Compose runs, and
-resolves placeholders inside the container. `HOME` is already forwarded to
-handle common use cases.
+Using the Docker image disables the editor integration (`vi` installed in the
+image will be used instead of your host editor). Host environment variables are
+not forwarded unless you add `-e` flags explicitly.
 
 The image runs as root, to avoid permission issues with the host Docker socket.
 On Colima file ownership is mapped automatically, on Linux you should add
@@ -95,7 +109,7 @@ and environment variables.
 sandcat run
 
 # Start your agent cli (e.g. claude). Because you're in a sandbox, you can use yolo mode!
-yolo-claude
+claude-yolo
 ```
 
 ### Customizing the generated files
