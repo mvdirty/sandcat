@@ -21,14 +21,16 @@ This repository contains:
   project and specific development stack, to install required tools and
   dependencies.
 
-Sandcat can be used as a devcontainer setup, or standalone,
-providing a shell for secure development.
+Sandcat can be used as a devcontainer setup, or standalone, providing a shell
+for secure development.
 
 ## Quick start
 
 ### 1. Install sandcat CLI
 
-The [CLI](cli/README.md) is a helper script and thin wrapper around docker-compose that simplifies the process of initializing and starting the sandbox.
+The [CLI](cli/README.md) is a helper script and thin wrapper around
+docker-compose that simplifies the process of initializing and starting the
+sandbox.
 
 #### Run as docker image (recommended)
 
@@ -40,14 +42,17 @@ docker pull ghcr.io/virtuslab/sandcat
 alias sandcat='docker run --rm -it -v "/var/run/docker.sock:/var/run/docker.sock" -v"$PWD:$PWD" -w"$PWD" -e TERM -e HOME --network none ghcr.io/virtuslab/sandcat'
 ```
 
-Using the Docker image disables the editor integration (`vi` installed in the image will be used instead of your host editor).
+Using the Docker image disables the editor integration (`vi` installed in the
+image will be used instead of your host editor).
 
-The host environment variables will not be available inside the container unless you forward them explicitly. 
-This is important because Docker Compose runs, and resolves placeholders inside the container. 
-`HOME` is already forwarded to handle common use cases.
+The host environment variables will not be available inside the container unless
+you forward them explicitly. This is important because Docker Compose runs, and
+resolves placeholders inside the container. `HOME` is already forwarded to
+handle common use cases.
 
-The image runs as root, to avoid permission issues with the host Docker socket. On Colima file ownership is mapped
-automatically, on Linux you should add `--user` parameter accordingly.
+The image runs as root, to avoid permission issues with the host Docker socket.
+On Colima file ownership is mapped automatically, on Linux you should add
+`--user` parameter accordingly.
 
 #### Local install
 
@@ -67,13 +72,19 @@ export PATH="$PWD/sandcat/cli/bin:$PATH"
 sandcat init
 ```
 
-This prompts you to select the agent type and IDE (for devcontainer mode), then sets up the necessary configuration files and network settings. You can also pass flags to skip prompts:
+This prompts you to select the agent type and IDE (for devcontainer mode), then
+sets up the necessary configuration files and network settings. You can also
+pass flags to skip prompts:
 
 ```bash
 sandcat init --agent claude --ide vscode
 ```
 
-Optional volume mounts (Claude config, shell customizations, dotfiles, .git, .idea, .vscode) are included as commented-out entries in the generated compose file. Uncomment them as needed, or set `SANDCAT_*` environment variables for scripted usage. See the [CLI README](cli/README.md) for the full list of flags and environment variables.
+Optional volume mounts (Claude config, shell customizations, dotfiles, .git,
+.idea, .vscode) are included as commented-out entries in the generated compose
+file. Uncomment them as needed, or set `SANDCAT_*` environment variables for
+scripted usage. See the [CLI README](cli/README.md) for the full list of flags
+and environment variables.
 
 ### 3. Start the sandbox
 
@@ -96,8 +107,8 @@ bind-mounts forward host Claude Code customizations — remove any mount whose
 source does not exist on your host.
 
 **`Dockerfile.app`** — uses [mise](https://mise.jdx.dev/) to manage language
-toolchains. Look for the `CUSTOMIZE` marker and add `mise use -g` lines for
-your stack:
+toolchains. Look for the `CUSTOMIZE` marker and add `mise use -g` lines for your
+stack:
 
 | Stack | mise command | CA trust notes |
 |-------|-------------|----------------|
@@ -109,9 +120,9 @@ your stack:
 Some runtimes need extra configuration to trust the mitmproxy CA — see [TLS and
 CA certificates](#tls-and-ca-certificates).
 
-**`devcontainer.json`** — includes VS Code hardening settings (credential
-socket cleanup, workspace trust, disabled local terminal). See
-[Hardening the VS Code setup](#hardening-the-vs-code-setup) for details.
+**`devcontainer.json`** — includes VS Code hardening settings (credential socket
+cleanup, workspace trust, disabled local terminal). See [Hardening the VS Code
+setup](#hardening-the-vs-code-setup) for details.
 
 ## Settings format
 
@@ -123,15 +134,15 @@ Settings are loaded from up to three files (highest to lowest precedence):
 | `.sandcat/settings.json` | Per-project defaults | Committed |
 | `~/.config/sandcat/settings.json` | User-wide defaults | N/A |
 
-All three files use the same JSON format. Missing files are silently skipped.
-If no files exist, the addon disables itself.
+All three files use the same JSON format. Missing files are silently skipped. If
+no files exist, the addon disables itself.
 
 **Merge rules:**
 - `env` — merged; higher-precedence values overwrite lower ones.
 - `secrets` — merged; higher-precedence entries overwrite lower ones.
-- `network` — concatenated; highest-precedence rules come first. Since rules
-  are evaluated top-to-bottom with first-match-wins, this means local rules
-  take priority over project rules, which take priority over user rules.
+- `network` — concatenated; highest-precedence rules come first. Since rules are
+  evaluated top-to-bottom with first-match-wins, this means local rules take
+  priority over project rules, which take priority over user rules.
 
 A typical setup keeps user-specific settings (git identity, API keys) in the
 user file, project-wide network rules in the project file, and developer
@@ -200,10 +211,11 @@ You can use the CLI helper command:
 sandcat edit settings
 ```
 
-This opens the network settings file in your editor. If you save changes, the proxy service will automatically restart to apply the new settings.
+This opens the network settings file in your editor. If you save changes, the
+proxy service will automatically restart to apply the new settings.
 
-Note that VS Code's **Rebuild Container** only
-rebuilds the `app` service — it does not restart `mitmproxy` or `wg-client`.
+Note that VS Code's **Rebuild Container** only rebuilds the `app` service — it
+does not restart `mitmproxy` or `wg-client`.
 
 ## Network access rules
 
@@ -318,9 +330,9 @@ accidental secret leakage to unintended services.
 2. On startup, the addon reads all available settings files (user, project,
    local), merges them according to the precedence rules above, and writes
    `sandcat.env` to the `mitmproxy-config` shared volume
-   (`/home/mitmproxy/.mitmproxy/sandcat.env`). This file contains plain env
-   vars (e.g. `export GIT_USER_NAME="Your Name"`) and secret placeholders
-   (e.g. `export ANTHROPIC_API_KEY="SANDCAT_PLACEHOLDER_ANTHROPIC_API_KEY"`).
+   (`/home/mitmproxy/.mitmproxy/sandcat.env`). This file contains plain env vars
+   (e.g. `export GIT_USER_NAME="Your Name"`) and secret placeholders (e.g.
+   `export ANTHROPIC_API_KEY="SANDCAT_PLACEHOLDER_ANTHROPIC_API_KEY"`).
 3. App containers mount `mitmproxy-config` read-only at `/mitmproxy-config/`.
    The shared entrypoint (`app-init.sh`) sources `sandcat.env` after installing
    the CA cert, so every process gets the env vars and placeholder values.
@@ -344,12 +356,12 @@ Claude Code supports two authentication methods inside the container:
 
 - **API key** — add an `ANTHROPIC_API_KEY` secret to `settings.json`. The
   entrypoint detects the key and seeds `~/.claude.json` with
-  `{"hasCompletedOnboarding": true}` so Claude Code uses it without
-  interactive setup.
+  `{"hasCompletedOnboarding": true}` so Claude Code uses it without interactive
+  setup.
 - **Subscription (browser login)** — omit `ANTHROPIC_API_KEY` from
-  `settings.json`. On first run Claude Code will display a URL and a code.
-  Open the URL in a browser on your host machine, enter the code, and
-  authenticate there — the container itself cannot open a browser.
+  `settings.json`. On first run Claude Code will display a URL and a code. Open
+  the URL in a browser on your host machine, enter the code, and authenticate
+  there — the container itself cannot open a browser.
 
 **Autonomous mode.** The bundled `devcontainer.json` enables
 `claudeCode.allowDangerouslySkipPermissions` and sets
@@ -524,8 +536,8 @@ box:
   it).
 - **Read-only `.devcontainer` overlay** — `compose-all.yml` mounts the
   `.devcontainer` directory as a separate read-only bind mount on top of the
-  writable project mount. This prevents the agent from modifying its own
-  sandbox configuration (entrypoint scripts, Dockerfile, compose files,
+  writable project mount. This prevents the agent from modifying its own sandbox
+  configuration (entrypoint scripts, Dockerfile, compose files,
   devcontainer.json).
 
 ### Consequences of hardening
@@ -557,8 +569,8 @@ HTTPS transparently.
 
 ## Testing the proxy
 
-Once inside the container, you can inspect traffic in the mitmproxy web UI.
-The host port is assigned dynamically — look it up from a host terminal with:
+Once inside the container, you can inspect traffic in the mitmproxy web UI. The
+host port is assigned dynamically — look it up from a host terminal with:
 
 ```sh
 sandcat compose port mitmproxy 8081
@@ -576,8 +588,8 @@ curl --max-time 3 --interface eth0 http://1.1.1.1
 iptables -F OUTPUT
 ```
 
-To verify Docker-internal traffic works (e.g. a database or app service added to the
-compose file):
+To verify Docker-internal traffic works (e.g. a database or app service added to
+the compose file):
 
 ```sh
 # Should succeed — Docker network traffic is allowed
@@ -661,18 +673,17 @@ enough for most tools — but some runtimes bring their own CA handling:
   certificates at compile time and will not trust the mitmproxy CA. Use
   `rustls-tls-native-roots` in reqwest so it reads the system CA store at
   runtime instead.
-- **Java** uses its own trust store (`cacerts`) and ignores the system CA.
-  The `Dockerfile.app` build step creates a version-independent `JAVA_HOME`
-  symlink, copies the default `cacerts`, and writes `JAVA_HOME` and
-  `JAVA_TOOL_OPTIONS` (with `-Djavax.net.ssl.trustStore`) to `.bashrc` so
-  VS Code's `userEnvProbe` picks them up immediately. At container startup,
-  `app-user-init.sh` imports the mitmproxy CA into the `cacerts` copy at
-  `~/.local/share/sandcat/cacerts` and updates the symlink target if the
-  Java version changed. **GraalVM native binaries** (e.g. `scala-cli`)
-  ignore `JAVA_TOOL_OPTIONS` and `JAVA_HOME` for trust store resolution.
-  `app-user-init.sh` pre-creates the `scala-cli` config file with the trust
-  store path so it works even before scala-cli is installed. Other native
-  tools may need similar tool-specific configuration.
+- **Java** uses its own trust store (`cacerts`) and ignores the system CA. The
+  `Dockerfile.app` build step creates a version-independent `JAVA_HOME` symlink,
+  copies the default `cacerts`, and writes `JAVA_HOME` and `JAVA_TOOL_OPTIONS`
+  (with `-Djavax.net.ssl.trustStore`) to `.bashrc` so VS Code's `userEnvProbe`
+  picks them up immediately. At container startup, `app-user-init.sh` imports
+  the mitmproxy CA into the `cacerts` copy at `~/.local/share/sandcat/cacerts`
+  and updates the symlink target if the Java version changed. **GraalVM native
+  binaries** (e.g. `scala-cli`) ignore `JAVA_TOOL_OPTIONS` and `JAVA_HOME` for
+  trust store resolution. `app-user-init.sh` pre-creates the `scala-cli` config
+  file with the trust store path so it works even before scala-cli is installed.
+  Other native tools may need similar tool-specific configuration.
 - **Python** uses the system CA store — works out of the box.
 
 ## Development
