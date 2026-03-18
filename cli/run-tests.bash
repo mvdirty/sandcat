@@ -73,6 +73,10 @@ then
 	echo "Total $(jq -r '.percent_covered' <"$coverage_dir/merged/kcov-merged/coverage.json")%"
 fi
 
+if ! command -v tput &>/dev/null; then
+	tput() { :; }
+fi
+
 if "$success"
 then
 	tput setaf 2
@@ -82,6 +86,7 @@ else
 	tput setaf 1
 	tput bold
 	echo "✗ Some tests failed in ${SECONDS} seconds."
+	tput sgr0
 	exit 1
 fi
 
