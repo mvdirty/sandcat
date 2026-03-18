@@ -14,8 +14,10 @@ run() {
 	local compose_file
 	compose_file="$(find_compose_file)"
 
-	docker compose -f "$compose_file" run --rm agent "${1-bash}" "${@:2}"
+	local rc=0
+	docker compose -f "$compose_file" run --rm agent "${1-bash}" "${@:2}" || rc=$?
 	docker compose -f "$compose_file" down
+	return "$rc"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]
