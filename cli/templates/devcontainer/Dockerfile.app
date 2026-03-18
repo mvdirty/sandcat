@@ -12,7 +12,7 @@ COPY --chmod=755 sandcat/scripts/app-user-init.sh /usr/local/bin/app-user-init.s
 USER vscode
 
 # Install Claude Code (native binary — no Node.js required).
-RUN curl -fsSL https://claude.ai/install.sh | sh
+RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Install mise (SDK manager) for language toolchains.
 RUN curl https://mise.run | sh
