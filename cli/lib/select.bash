@@ -79,9 +79,10 @@ select_multiple() {
 
 		local result=""
 		local valid=true
-		local IFS=','
 		local num
-		for num in $reply; do
+		local -a nums
+		IFS=',' read -ra nums <<< "$reply"
+		for num in "${nums[@]}"; do
 			num=$(echo "$num" | tr -d ' ')
 			if [[ $num =~ ^[0-9]+$ ]] && (( num >= 1 && num <= ${#options[@]} )); then
 				if [[ -n "$result" ]]; then
