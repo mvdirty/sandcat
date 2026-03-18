@@ -466,6 +466,39 @@ class TestShellEscaping:
         assert SandcatAddon._shell_escape("sk-ant-abc123") == "sk-ant-abc123"
 
 
+class TestEnvVarNameValidation:
+    def test_valid_names(self):
+        for name in ["FOO", "BAR_BAZ", "_PRIVATE", "a1b2"]:
+            SandcatAddon._validate_env_name(name)  # should not raise
+
+    def test_invalid_names(self):
+        for name in ["1BAD", "FOO BAR", 'X"; curl evil.com #', "a-b", ""]:
+            with pytest.raises(ValueError):
+                SandcatAddon._validate_env_name(name)
+
+    def test_invalid_env_name_blocks_write(self, tmp_path):
+        settings = {"env": {'BAD NAME': "value"}}
+        p = tmp_path / "settings.json"
+        p.write_text(json.dumps(settings))
+        env_path = tmp_path / "sandcat.env"
+        addon = SandcatAddon()
+        with patch("mitmproxy_addon.SETTINGS_PATHS", [str(p)]), \
+             patch("mitmproxy_addon.SANDCAT_ENV_PATH", str(env_path)):
+            with pytest.raises(ValueError):
+                addon.load(MagicMock())
+
+    def test_invalid_secret_name_blocks_write(self, tmp_path):
+        settings = {"secrets": {"BAD;NAME": {"value": "v", "hosts": []}}}
+        p = tmp_path / "settings.json"
+        p.write_text(json.dumps(settings))
+        env_path = tmp_path / "sandcat.env"
+        addon = SandcatAddon()
+        with patch("mitmproxy_addon.SETTINGS_PATHS", [str(p)]), \
+             patch("mitmproxy_addon.SANDCAT_ENV_PATH", str(env_path)):
+            with pytest.raises(ValueError):
+                addon.load(MagicMock())
+
+
 # ---------------------------------------------------------------------------
 # Settings merging
 # ---------------------------------------------------------------------------

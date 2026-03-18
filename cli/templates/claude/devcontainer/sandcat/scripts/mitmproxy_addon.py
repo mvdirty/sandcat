@@ -16,9 +16,12 @@ Secret placeholders are replaced with real values only for allowed hosts.
 import json
 import logging
 import os
+import re
 from fnmatch import fnmatch
 
 from mitmproxy import ctx, http, dns
+
+_VALID_ENV_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 # Settings layers, lowest to highest precedence.
 SETTINGS_PATHS = [
@@ -98,12 +101,20 @@ class SandcatAddon:
         """Escape a string for safe inclusion inside double quotes in shell."""
         return value.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`")
 
+    @staticmethod
+    def _validate_env_name(name: str):
+        """Raise ValueError if name is not a valid shell variable name."""
+        if not _VALID_ENV_NAME.match(name):
+            raise ValueError(f"Invalid env var name: {name!r}")
+
     def _write_placeholders_env(self):
         lines = []
         # Non-secret env vars (e.g. git identity) — passed through as-is.
         for name, value in self.env.items():
+            self._validate_env_name(name)
             lines.append(f'export {name}="{self._shell_escape(value)}"')
         for name, entry in self.secrets.items():
+            self._validate_env_name(name)
             lines.append(f'export {name}="{self._shell_escape(entry["placeholder"])}"')
         with open(SANDCAT_ENV_PATH, "w") as f:
             f.write("\n".join(lines) + "\n")
