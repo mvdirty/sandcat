@@ -60,6 +60,12 @@ init() {
 	while [[ $# -gt 0 ]]
 	do
 		case $1 in
+		--name|--path|--agent|--ide|--stacks)
+			if [[ $# -lt 2 ]]; then
+				echo "Option $1 requires a value" | error
+				return 1
+			fi
+			;;&
 		--name)
 			name="$2"
 			shift 2
