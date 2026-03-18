@@ -9,32 +9,21 @@ then
 	tput() { :; }
 fi
 
-info() {
+_log() {
+	local color=$1 label=$2
+	local ts line
 	# shellcheck disable=SC2312
-	date +%T | tr '\n' ' '
-	tput setaf 4
-	tput bold
-	echo -n '[INFO] '
-	tput sgr0
-	cat -
+	ts=$(date +%T)
+	while IFS= read -r line; do
+		echo -n "$ts "
+		tput setaf "$color"
+		tput bold
+		echo -n "$label "
+		tput sgr0
+		echo "$line"
+	done
 } >&2
 
-warning() {
-	# shellcheck disable=SC2312
-	date +%T | tr '\n' ' '
-	tput setaf 3
-	tput bold
-	echo -n '[WARN] '
-	tput sgr0
-	cat -
-} >&2
-
-error() {
-	# shellcheck disable=SC2312
-	date +%T | tr '\n' ' '
-	tput setaf 1
-	tput bold
-	echo -n '[ERROR] '
-	tput sgr0
-	cat -
-} >&2
+info()    { _log 4 '[INFO]'; }
+warning() { _log 3 '[WARN]'; }
+error()   { _log 1 '[ERROR]'; }
