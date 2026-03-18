@@ -48,6 +48,7 @@ create_user_settings() {
 #   --name - Project name for Docker Compose
 #   --path - Project directory path
 #   --stacks - Comma-separated list of development stacks (node,python,java,...)
+#   --proxy - Proxy UI mode: web (default) or tui
 init() {
 	require yq
 
@@ -57,11 +58,12 @@ init() {
 	local ide=""
 	local stacks_csv=""
 	local stacks_provided=false
+	local proxy_mode=""
 
 	while [[ $# -gt 0 ]]
 	do
 		case $1 in
-		--name|--path|--agent|--ide|--stacks)
+		--name|--path|--agent|--ide|--stacks|--proxy)
 			if [[ $# -lt 2 ]]; then
 				echo "Option $1 requires a value" | error
 				return 1
@@ -88,6 +90,10 @@ init() {
 		--stacks)
 			stacks_csv="$2"
 			stacks_provided=true
+			shift 2
+			;;
+		--proxy)
+			proxy_mode="$2"
 			shift 2
 			;;
 		*)
@@ -145,6 +151,17 @@ init() {
 		return 1
 	fi
 
+	# Proxy mode selection
+	local available_proxy_modes=(web tui)
+	if [[ -z "$proxy_mode" ]]
+	then
+		proxy_mode=$(select_option "Select proxy UI:" "${available_proxy_modes[@]}")
+	elif [[ ! " ${available_proxy_modes[*]} " =~ [[:space:]]${proxy_mode}[[:space:]] ]]
+	then
+		echo "Invalid proxy mode: $proxy_mode (expected: ${available_proxy_modes[*]})" | error
+		return 1
+	fi
+
 	# Stack selection
 	local stacks_resolved=""
 	if [[ "$stacks_provided" == "true" ]] && [[ -n "$stacks_csv" ]]; then
@@ -180,7 +197,8 @@ init() {
 		--agent "$agent" \
 		--ide "$ide" \
 		--name "$name" \
-		--stacks "$stacks_resolved"
+		--stacks "$stacks_resolved" \
+		--proxy "$proxy_mode"
 
 	# Summary
 	echo "" >&2

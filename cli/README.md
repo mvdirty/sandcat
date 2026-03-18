@@ -16,6 +16,7 @@ Options:
 - `--agent` - Agent type: `claude` (skips prompt)
 - `--ide` - IDE for devcontainer mode: `vscode`, `jetbrains`, `none` (skips prompt)
 - `--stacks` - Comma-separated development stacks to install: `node`, `python`, `java`, `rust`, `go`, `scala`, `ruby`, `dotnet` (skips prompt)
+- `--proxy` - Proxy UI mode: `web` (default, mitmweb browser UI) or `tui` (mitmproxy console, use with `sandcat proxy` to attach)
 - `--name` - Project name for Docker Compose (default: derived from directory name)
 - `--path` - Project directory (default: current directory)
 
@@ -85,10 +86,10 @@ development stack versions installed via mise.
 
 ### `sandcat proxy`
 
-Opens the mitmproxy console (TUI) for interactive traffic inspection. Replaces the web UI with the console
-interface. The WireGuard tunnel is briefly interrupted while switching modes and reconnects automatically.
-On exit (or Ctrl+C), the web UI is restored. Additional mitmproxy arguments can be passed
-(e.g. `sandcat proxy --set flow_detail=3`).
+Opens the mitmproxy interface for traffic inspection. Behavior depends on the proxy mode chosen during
+`sandcat init`:
+- **web** (default): prints the mitmweb URL and password
+- **tui**: attaches to the running mitmproxy console (press `q` to detach)
 
 ### `sandcat restart-proxy`
 

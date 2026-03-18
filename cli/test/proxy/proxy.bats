@@ -15,85 +15,47 @@ teardown() {
 	unstub_all
 }
 
-@test "proxy switches to console, attaches, then restores web mode" {
+@test "proxy attaches in TUI mode" {
 	stub docker \
-		"compose -f $COMPOSE_FILE -f * up -d --force-recreate mitmproxy : :" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate wg-client : :" \
+		"compose -f $COMPOSE_FILE config --format json : echo '{\"services\":{\"mitmproxy\":{\"stdin_open\":true}}}'" \
 		"compose -f $COMPOSE_FILE ps -q mitmproxy : echo container-id" \
-		"attach container-id : :" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate mitmproxy : :" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate wg-client : :"
+		"attach container-id : :"
 
 	cd "$BATS_TEST_TMPDIR"
 	run proxy
 	assert_success
-	assert_output --partial "Switching proxy to console mode"
-	assert_output --partial "Restoring proxy"
+	assert_output --partial "Attaching to mitmproxy console"
 }
 
-@test "proxy passes additional arguments to mitmproxy command" {
-	local captured="$BATS_TEST_TMPDIR/captured-override"
-
+@test "proxy shows URL in web mode" {
 	stub docker \
-		"compose -f $COMPOSE_FILE -f * up -d --force-recreate mitmproxy : cat \"\$5\" > '$captured'" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate wg-client : :" \
-		"compose -f $COMPOSE_FILE ps -q mitmproxy : echo container-id" \
-		"attach container-id : :" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate mitmproxy : :" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate wg-client : :"
-
-	cd "$BATS_TEST_TMPDIR"
-	run proxy --set flow_detail=3
-	assert_success
-
-	run grep 'flow_detail=3' "$captured"
-	assert_success
-}
-
-@test "proxy override includes COLUMNS and LINES env vars" {
-	local captured="$BATS_TEST_TMPDIR/captured-override"
-
-	stub docker \
-		"compose -f $COMPOSE_FILE -f * up -d --force-recreate mitmproxy : cat \"\$5\" > '$captured'" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate wg-client : :" \
-		"compose -f $COMPOSE_FILE ps -q mitmproxy : echo container-id" \
-		"attach container-id : :" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate mitmproxy : :" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate wg-client : :"
+		"compose -f $COMPOSE_FILE config --format json : echo '{\"services\":{\"mitmproxy\":{}}}'" \
+		"compose -f $COMPOSE_FILE port mitmproxy 8081 : echo 0.0.0.0:12345"
 
 	cd "$BATS_TEST_TMPDIR"
 	run proxy
 	assert_success
-
-	run grep 'COLUMNS' "$captured"
-	assert_success
-	run grep 'LINES' "$captured"
-	assert_success
+	assert_output --partial "http://0.0.0.0:12345"
 }
 
-@test "proxy restores web mode when wg-client restart fails during switch" {
+@test "proxy fails when not running in TUI mode" {
 	stub docker \
-		"compose -f $COMPOSE_FILE -f * up -d --force-recreate mitmproxy : :" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate wg-client : exit 1" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate mitmproxy : :" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate wg-client : :"
+		"compose -f $COMPOSE_FILE config --format json : echo '{\"services\":{\"mitmproxy\":{\"stdin_open\":true}}}'" \
+		"compose -f $COMPOSE_FILE ps -q mitmproxy : echo ''"
 
 	cd "$BATS_TEST_TMPDIR"
 	run proxy
 	assert_failure
+	assert_output --partial "not running"
 }
 
-@test "proxy restores web mode and propagates error on console failure" {
+@test "proxy fails when not running in web mode" {
 	stub docker \
-		"compose -f $COMPOSE_FILE -f * up -d --force-recreate mitmproxy : :" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate wg-client : :" \
-		"compose -f $COMPOSE_FILE ps -q mitmproxy : echo container-id" \
-		"attach container-id : exit 1" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate mitmproxy : :" \
-		"compose -f $COMPOSE_FILE up -d --force-recreate wg-client : :"
+		"compose -f $COMPOSE_FILE config --format json : echo '{\"services\":{\"mitmproxy\":{}}}'" \
+		"compose -f $COMPOSE_FILE port mitmproxy 8081 : exit 1"
 
 	cd "$BATS_TEST_TMPDIR"
 	run proxy
 	assert_failure
-	assert_output --partial "Restoring proxy"
+	assert_output --partial "not running"
 }

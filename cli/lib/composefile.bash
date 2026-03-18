@@ -63,6 +63,26 @@ customize_compose_file() {
 	sed '/^$/{ N; /^\n[[:space:]]/{ s/^\n//; }; }' "$compose_file" > "$compose_file.tmp" && mv "$compose_file.tmp" "$compose_file"
 }
 
+# Switches the mitmproxy service from web UI to TUI (console) mode.
+# Replaces the mitmweb command with mitmproxy, adds tty/stdin_open,
+# sets COLUMNS/LINES for detached TTY initialization, and removes the
+# web UI port mapping.
+# Args:
+#   $1 - Path to the compose-proxy.yml file
+set_proxy_tui_mode() {
+	require yq
+	local compose_file=$1
+
+	yq -i '
+		.services.mitmproxy.command = "mitmproxy --mode wireguard -s /scripts/mitmproxy_addon.py" |
+		.services.mitmproxy.stdin_open = true |
+		.services.mitmproxy.tty = true |
+		.services.mitmproxy.environment.COLUMNS = "120" |
+		.services.mitmproxy.environment.LINES = "40" |
+		del(.services.mitmproxy.ports)
+	' "$compose_file"
+}
+
 # Sets the project name in a Docker Compose file.
 # Args:
 #   $1 - Path to the Docker Compose file

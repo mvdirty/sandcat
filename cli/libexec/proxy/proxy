@@ -8,74 +8,38 @@ source "$SCT_LIBDIR/require.bash"
 # shellcheck source=../../lib/path.bash
 source "$SCT_LIBDIR/path.bash"
 
-# Opens the mitmproxy console (TUI) for interactive traffic inspection.
-# Replaces the web UI (mitmweb) with the console interface. The WireGuard
-# tunnel is briefly interrupted while switching modes and reconnects
-# automatically. On exit (or Ctrl+C), the web UI is restored.
+# Opens the mitmproxy interface for traffic inspection.
+# In TUI mode: attaches to the running mitmproxy console.
+# In web mode: prints the URL of the mitmweb UI.
 proxy() {
 	require docker
-	require yq
 
-	_proxy_compose_file="$(find_compose_file)"
-	_proxy_override=$(mktemp "${TMPDIR:-/tmp}/sandcat-proxy-XXXXXX")
+	local compose_file
+	compose_file="$(find_compose_file)"
 
-	_proxy_restored=false
-	_proxy_switched=false
-	_proxy_restore() {
-		if [[ "$_proxy_restored" == "true" ]]; then
-			return
+	# Detect mode from compose config: TUI mode has stdin_open set.
+	local is_tui
+	is_tui=$(docker compose -f "$compose_file" config --format json |
+		yq '.services.mitmproxy.stdin_open // false')
+
+	if [[ "$is_tui" == "true" ]]; then
+		local container_id
+		container_id=$(docker compose -f "$compose_file" ps -q mitmproxy)
+		if [[ -z "$container_id" ]]; then
+			echo "Proxy is not running. Start it first with: sandcat run or sandcat compose up -d" | error
+			return 1
 		fi
-		_proxy_restored=true
-
-		rm -f "$_proxy_override"
-		if [[ "$_proxy_switched" == "true" ]]; then
-			echo "Restoring proxy (web mode)..." | info
-			if ! docker compose -f "$_proxy_compose_file" up -d --force-recreate mitmproxy; then
-				echo "Failed to restore mitmproxy web mode." | warning
-			fi
-			if ! docker compose -f "$_proxy_compose_file" up -d --force-recreate wg-client; then
-				echo "Failed to restart wg-client." | warning
-			fi
+		echo "Attaching to mitmproxy console. Press 'q' to detach." | info
+		docker attach "$container_id"
+	else
+		local url
+		url=$(docker compose -f "$compose_file" port mitmproxy 8081 2>/dev/null) || true
+		if [[ -z "$url" ]]; then
+			echo "Proxy is not running. Start it first with: sandcat run or sandcat compose up -d" | error
+			return 1
 		fi
-	}
-	trap _proxy_restore EXIT
-
-	# Pass host terminal dimensions via env vars so mitmproxy TUI can
-	# initialize before docker attach connects the real terminal.
-	# Python's os.get_terminal_size() falls back to COLUMNS/LINES when
-	# the PTY reports 0x0 (detached container).
-	local cols lines
-	cols=$(tput cols 2>/dev/null || echo 120)
-	lines=$(tput lines 2>/dev/null || echo 40)
-
-	# Build a YAML override file with the command as a properly encoded list.
-	# Start with the base args, then append user args one at a time via yq
-	# to ensure correct YAML encoding of special characters.
-	cols="$cols" lines="$lines" yq -n -o yaml '
-		.services.mitmproxy.command = ["mitmproxy", "--mode", "wireguard", "-s", "/scripts/mitmproxy_addon.py"] |
-		.services.mitmproxy.stdin_open = true |
-		.services.mitmproxy.tty = true |
-		.services.mitmproxy.environment.COLUMNS = env(cols) |
-		.services.mitmproxy.environment.LINES = env(lines)
-	' > "$_proxy_override"
-	local arg
-	for arg in "$@"; do
-		arg="$arg" yq -i '.services.mitmproxy.command += [strenv(arg)]' "$_proxy_override"
-	done
-
-	echo "Switching proxy to console mode..." | info
-	_proxy_switched=true
-	docker compose -f "$_proxy_compose_file" -f "$_proxy_override" up -d --force-recreate mitmproxy
-	docker compose -f "$_proxy_compose_file" up -d --force-recreate wg-client
-
-	echo "Press 'q' to exit." | info
-
-	local console_exit=0
-	docker attach "$(docker compose -f "$_proxy_compose_file" ps -q mitmproxy)" || console_exit=$?
-
-	_proxy_restore
-	trap - EXIT
-	return "$console_exit"
+		echo "mitmweb UI: http://$url (password: mitmproxy)" | info
+	fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]

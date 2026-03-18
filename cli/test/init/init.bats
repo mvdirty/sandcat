@@ -31,18 +31,18 @@ teardown() {
 	stub settings \
 		"$PROJECT_DIR/.sandcat/settings.json claude jetbrains : :"
 	stub devcontainer \
-		"--settings-file .sandcat/settings.json --project-path * --agent claude --ide jetbrains --name test --stacks * : :"
+		"--settings-file .sandcat/settings.json --project-path * --agent claude --ide jetbrains --name test --stacks * --proxy web : :"
 
-	run init --agent claude --ide jetbrains --name test --path "$PROJECT_DIR" --stacks ""
+	run init --agent claude --ide jetbrains --name test --path "$PROJECT_DIR" --stacks "" --proxy web
 	assert_success
 }
 
 @test "init accepts valid --stacks value" {
 	stub settings "$PROJECT_DIR/.sandcat/settings.json claude vscode : :"
 	stub devcontainer \
-		"--settings-file .sandcat/settings.json --project-path $PROJECT_DIR --agent claude --ide vscode --name test --stacks 'python rust' : :"
+		"--settings-file .sandcat/settings.json --project-path $PROJECT_DIR --agent claude --ide vscode --name test --stacks 'python rust' --proxy web : :"
 
-	run init --agent claude --ide vscode --name test --path "$PROJECT_DIR" --stacks "python,rust"
+	run init --agent claude --ide vscode --name test --path "$PROJECT_DIR" --stacks "python,rust" --proxy web
 	assert_success
 }
 
@@ -55,9 +55,9 @@ teardown() {
 @test "init resolves scala dependency to java" {
 	stub settings "$PROJECT_DIR/.sandcat/settings.json claude vscode : :"
 	stub devcontainer \
-		"--settings-file .sandcat/settings.json --project-path $PROJECT_DIR --agent claude --ide vscode --name test --stacks 'java scala' : :"
+		"--settings-file .sandcat/settings.json --project-path $PROJECT_DIR --agent claude --ide vscode --name test --stacks 'java scala' --proxy web : :"
 
-	run init --agent claude --ide vscode --name test --path "$PROJECT_DIR" --stacks "scala"
+	run init --agent claude --ide vscode --name test --path "$PROJECT_DIR" --stacks "scala" --proxy web
 	assert_success
 }
 
@@ -69,7 +69,8 @@ teardown() {
 	stub read_line "* : echo ''"
 	stub select_option \
 		"'Select agent:' claude : echo claude" \
-		"'Select IDE:' vscode jetbrains none : echo vscode"
+		"'Select IDE:' vscode jetbrains none : echo vscode" \
+		"'Select proxy UI:' web tui : echo web"
 	stub select_multiple \
 		"'Select development stacks (comma-separated numbers, empty for none):' node python java rust go scala ruby dotnet : echo ''"
 
@@ -79,7 +80,7 @@ teardown() {
 
 	stub settings "$PROJECT_DIR/$settings_file claude vscode : :"
 	stub devcontainer \
-		"--settings-file $settings_file --project-path $PROJECT_DIR --agent claude --ide vscode --name $expected_name --stacks '' : :"
+		"--settings-file $settings_file --project-path $PROJECT_DIR --agent claude --ide vscode --name $expected_name --stacks '' --proxy web : :"
 
 	run init --path "$PROJECT_DIR"
 
