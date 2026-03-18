@@ -5,11 +5,13 @@ set -euo pipefail
 source "$SCT_LIBDIR/logging.bash"
 # shellcheck source=../../lib/select.bash
 source "$SCT_LIBDIR/select.bash"
+# shellcheck source=../../lib/constants.bash
+source "$SCT_LIBDIR/constants.bash"
 
 # Opens the user-level settings file (~/.config/sandcat/settings.json) in the
 # default editor.
 user-settings() {
-	local user_settings="$HOME/.config/sandcat/settings.json"
+	local user_settings="$SCT_HOME/settings.json"
 
 	if [[ ! -f "$user_settings" ]]
 	then
