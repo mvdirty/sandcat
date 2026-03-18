@@ -3,8 +3,13 @@ name: Tests
 on:
   push:
     branches: [master]
+    paths:
+      - 'cli/templates/claude/devcontainer/sandcat/scripts/**'
+      - '.github/workflows/test.yml'
   pull_request:
-    branches: [master]
+    paths:
+      - 'cli/templates/claude/devcontainer/sandcat/scripts/**'
+      - '.github/workflows/test.yml'
 
 jobs:
   test:
