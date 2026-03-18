@@ -4,11 +4,11 @@ on:
   push:
     branches: [master]
     paths:
-      - 'cli/templates/claude/devcontainer/sandcat/scripts/**'
+      - 'cli/templates/devcontainer/sandcat/scripts/**'
       - '.github/workflows/test.yml'
   pull_request:
     paths:
-      - 'cli/templates/claude/devcontainer/sandcat/scripts/**'
+      - 'cli/templates/devcontainer/sandcat/scripts/**'
       - '.github/workflows/test.yml'
 
 jobs:
@@ -20,4 +20,4 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install pytest
-      - run: pytest cli/templates/claude/devcontainer/sandcat/scripts/test_mitmproxy_addon.py -v
+      - run: pytest cli/templates/devcontainer/sandcat/scripts/test_mitmproxy_addon.py -v

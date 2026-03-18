@@ -7,7 +7,7 @@ setup() {
 	source "$SCT_LIBDIR/devcontainer.bash"
 
 	DOCKERFILE="$BATS_TEST_TMPDIR/Dockerfile.app"
-	cp "$SCT_TEMPLATEDIR/claude/devcontainer/Dockerfile.app" "$DOCKERFILE"
+	cp "$SCT_TEMPLATEDIR/devcontainer/Dockerfile.app" "$DOCKERFILE"
 }
 
 teardown() {

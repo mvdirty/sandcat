@@ -16,11 +16,11 @@ This repository contains:
 
 * a bash CLI to initialize the sandbox for a project, copying and customizing
   the necessary files (see `cli/`)
-* reusable proxy definitions under `cli/templates/*/devcontainer/sandcat/`:
+* reusable proxy definitions under `cli/templates/devcontainer/sandcat/`:
   `Dockerfile.wg-client`, `compose-proxy.yml`, and `scripts/` that perform the
   network filtering & secret substitution
 * template application and dev container configuration under
-  `cli/templates/*/devcontainer/`: `Dockerfile.app`, `compose-all.yml`,
+  `cli/templates/devcontainer/`: `Dockerfile.app`, `compose-all.yml`,
   `devcontainer.json`. This should be fine-tuned for each project and specific
   development stack, to install required tools and dependencies.
 
@@ -649,7 +649,7 @@ gh auth status
 **Python tests** (mitmproxy addon):
 
 ```sh
-cd cli/templates/claude/devcontainer/sandcat/scripts && pytest test_mitmproxy_addon.py -v
+cd cli/templates/devcontainer/sandcat/scripts && pytest test_mitmproxy_addon.py -v
 ```
 
 **BATS tests** (CLI):

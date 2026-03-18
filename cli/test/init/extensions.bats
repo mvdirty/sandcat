@@ -7,7 +7,7 @@ setup() {
 	source "$SCT_LIBDIR/devcontainer.bash"
 
 	DEVCONTAINER_JSON="$BATS_TEST_TMPDIR/devcontainer.json"
-	cp "$SCT_TEMPLATEDIR/claude/devcontainer/devcontainer.json" "$DEVCONTAINER_JSON"
+	cp "$SCT_TEMPLATEDIR/devcontainer/devcontainer.json" "$DEVCONTAINER_JSON"
 }
 
 teardown() {
