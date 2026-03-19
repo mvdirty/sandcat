@@ -63,10 +63,9 @@ customize_compose_file() {
 	sed '/^$/{ N; /^\n[[:space:]]/{ s/^\n//; }; }' "$compose_file" > "$compose_file.tmp" && mv "$compose_file.tmp" "$compose_file"
 }
 
-# Switches the mitmproxy service from web UI to TUI (console) mode.
-# Replaces the mitmweb command with mitmproxy, adds tty/stdin_open,
-# sets COLUMNS/LINES for detached TTY initialization, and removes the
-# web UI port mapping.
+# Switches the mitmproxy service from web UI to console (mitmdump) mode.
+# Replaces the mitmweb command with mitmdump and removes the web UI port.
+# mitmdump logs flows as text to stdout, viewable via docker compose logs.
 # Args:
 #   $1 - Path to the compose-proxy.yml file
 set_proxy_tui_mode() {
@@ -74,11 +73,7 @@ set_proxy_tui_mode() {
 	local compose_file=$1
 
 	yq -i '
-		.services.mitmproxy.command = "mitmproxy --mode wireguard -s /scripts/mitmproxy_addon.py" |
-		.services.mitmproxy.stdin_open = true |
-		.services.mitmproxy.tty = true |
-		.services.mitmproxy.environment.COLUMNS = "120" |
-		.services.mitmproxy.environment.LINES = "40" |
+		.services.mitmproxy.command = "mitmdump --mode wireguard -s /scripts/mitmproxy_addon.py" |
 		del(.services.mitmproxy.ports)
 	' "$compose_file"
 }

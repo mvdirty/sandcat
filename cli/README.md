@@ -89,7 +89,7 @@ development stack versions installed via mise.
 Opens the mitmproxy interface for traffic inspection. Behavior depends on the proxy mode chosen during
 `sandcat init`:
 - **web** (default): prints the mitmweb URL and password
-- **tui**: attaches to the running mitmproxy console (press `q` to detach)
+- **tui**: tails the mitmdump flow log (Ctrl+C to stop)
 
 ### `sandcat restart-proxy`
 

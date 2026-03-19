@@ -9,28 +9,22 @@ source "$SCT_LIBDIR/require.bash"
 source "$SCT_LIBDIR/path.bash"
 
 # Opens the mitmproxy interface for traffic inspection.
-# In TUI mode: attaches to the running mitmproxy console.
-# In web mode: prints the URL of the mitmweb UI.
+# In console mode (mitmdump): tails the proxy logs.
+# In web mode (mitmweb): prints the URL of the web UI.
 proxy() {
 	require docker
 
 	local compose_file
 	compose_file="$(find_compose_file)"
 
-	# Detect mode from compose config: TUI mode has stdin_open set.
-	local is_tui
-	is_tui=$(docker compose -f "$compose_file" config --format json |
-		yq '.services.mitmproxy.stdin_open // false')
+	# Detect mode: web mode has port 8081 mapped, console mode does not.
+	local has_ports
+	has_ports=$(docker compose -f "$compose_file" config --format json |
+		yq '.services.mitmproxy.ports // [] | length')
 
-	if [[ "$is_tui" == "true" ]]; then
-		local container_id
-		container_id=$(docker compose -f "$compose_file" ps -q mitmproxy)
-		if [[ -z "$container_id" ]]; then
-			echo "Proxy is not running. Start it first with: sandcat run or sandcat compose up -d" | error
-			return 1
-		fi
-		echo "Attaching to mitmproxy console. Press 'q' to detach." | info
-		docker attach "$container_id"
+	if [[ "$has_ports" == "0" ]]; then
+		echo "Following mitmproxy logs (Ctrl+C to stop)..." | info
+		docker compose -f "$compose_file" logs -f mitmproxy
 	else
 		local url
 		url=$(docker compose -f "$compose_file" port mitmproxy 8081 2>/dev/null) || true
